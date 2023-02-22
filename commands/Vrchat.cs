@@ -4,9 +4,9 @@ using DSharpPlus.Entities;
 using VRChat.API.Api;
 
 namespace Cerberus.Commands {
-    [SlashCommandGroup("vrc", "VRChat integration commands")]
+    [SlashCommandGroup("VRChat", "VRChat integration commands")]
     public class Vrchat : ApplicationCommandModule {
-        [SlashCommand("online", "Gets the currently active player number from VRChat.")]
+        [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task Online(InteractionContext ctx) {
             SystemApi sysApi = new SystemApi("https://api.vrchat.cloud/api/1");
 

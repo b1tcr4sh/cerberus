@@ -18,8 +18,11 @@ namespace Cerberus {
             });
 
             commands.RegisterCommands<Vrchat>();
+            commands.RegisterCommands<Util>();
+
             bot.Ready += OnReady;
             bot.GuildAvailable += OnGuildAvailable;
+            bot.MessageReactionAdded += OnReaction;
         }
         public async Task Connect() {
             await bot.ConnectAsync();
@@ -32,6 +35,8 @@ namespace Cerberus {
         private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {
             await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
         }
+        private async Task OnReaction(DiscordClient client, MessageReactionAddEventArgs eventArgs) {
 
+        }
     }
 }
