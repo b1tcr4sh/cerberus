@@ -12,7 +12,6 @@ namespace Cerberus.Commands {
             [Option("MessageID", "ID of the message to attach to")] string messageId,
             [Option("Emoji-Name", "Name of the emoji to use")] string emojiName) {
 
-            // await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Give me a sec..."));
             await ctx.DeferAsync();
 
             // Should insert reaction listener into db
@@ -22,9 +21,14 @@ namespace Cerberus.Commands {
                 return pair.Value.Name.ToLower().Equals(roleName.ToLower()) ? true : false;
             }).First().Value;
 
+            if (role is null) {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("That role definitelyy doesn't exist"));
+                return;
+            }
+
             ulong messageIdInt;
             if (!ulong.TryParse(messageId, out messageIdInt)) {
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Something's wrong with that message id?  Don't ask me"));
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something's wrong with that message id?  Don't ask me"));
                 return;
             }
 
@@ -34,11 +38,16 @@ namespace Cerberus.Commands {
             try {
                 message = await ctx.Channel.GetMessageAsync(messageIdInt);
             } catch (NotFoundException) {
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Yeaa I don't think that message exists"));
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Yeaa I don't think that message exists"));
                 return;
             }
 
             await message.CreateReactionAsync(emoji);
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Should have worked.. ?"));
+
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+            await (await ctx.GetOriginalResponseAsync()).DeleteAsync();
         }
     }
 }

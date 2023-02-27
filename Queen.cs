@@ -33,7 +33,7 @@ namespace Cerberus {
             return Task.CompletedTask;
         }
         private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {
-            await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
+            // await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
         }
         private async Task OnReaction(DiscordClient client, MessageReactionAddEventArgs eventArgs) {
 
