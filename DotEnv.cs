@@ -19,7 +19,7 @@ namespace Cerberus {
             string value;
 
             if (!variables.TryGetValue(key, out value)) {
-                throw new Exception("Variable with key not found");
+                throw new Exception(String.Format("variable with key {0} not found!", key));
             }
 
             return value;

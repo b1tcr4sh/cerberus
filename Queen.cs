@@ -3,18 +3,19 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Cerberus.Commands;
+using Cerberus.Database;
 
 namespace Cerberus {
     public class LoonieBot {
         private DiscordClient bot;
-        public LoonieBot(string token) {
+        public LoonieBot(string token, DatabaseMiddleware db) {
             bot = new DiscordClient(new DiscordConfiguration {
                 Token = token,
                 Intents = DiscordIntents.All
             });
 
             SlashCommandsExtension commands = bot.UseSlashCommands(new SlashCommandsConfiguration {
-                Services = new ServiceCollection().AddSingleton<Random>().BuildServiceProvider()
+                Services = new ServiceCollection().AddSingleton<DatabaseMiddleware>(db).BuildServiceProvider()
             });
 
             commands.RegisterCommands<Vrchat>();
