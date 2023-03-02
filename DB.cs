@@ -1,6 +1,5 @@
 using MySqlConnector.Authentication;
 using MySqlConnector;
-using Cerberus.Util;
 
 namespace Cerberus.Database {
     public class DatabaseMiddleware {
@@ -14,7 +13,17 @@ namespace Cerberus.Database {
         }
 
         public async Task InsertReactionListenerAsync(Reactionlistener listener) {
-            
+            MySqlCommand command = new MySqlCommand(String.Format("INSERT INTO reaction_listeners VALUES({0}, {1}, {2});", listener.RoleId, listener.MessageId, listener.Emoji.Name), _connection);
+        
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task Test() {
+            var command = new MySqlCommand("show tables;", _connection);
+            var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+                Console.WriteLine(reader.GetString(0));
         }
     }
 }

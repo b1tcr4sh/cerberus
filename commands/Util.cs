@@ -42,7 +42,7 @@ namespace Cerberus.Commands {
 
             await message.CreateReactionAsync(emoji);    
 
-            // Insert reaction listener entry into DB
+            await Db.InsertReactionListenerAsync(new Reactionlistener { MessageId = messageIdInt, RoleId = role.Id, Emoji = emoji});
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Should have worked.. ?"));
 

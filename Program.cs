@@ -12,6 +12,7 @@ namespace Cerberus {
 
             DatabaseMiddleware db = new DatabaseMiddleware(dbAddress, dbName, dbUser, dbPass);
             await db.ConnectAsync();
+            await db.Test();
 
             LoonieBot queen = new LoonieBot(token, db);
             await queen.Connect();
