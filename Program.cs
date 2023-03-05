@@ -10,9 +10,7 @@ namespace Cerberus {
             string dbName = envVars.Get("MY_SQL_DB");
             string dbAddress = envVars.Get("MY_SQL_SERVER_ADDRESS");
 
-            DatabaseMiddleware db = new DatabaseMiddleware(dbAddress, dbName, dbUser, dbPass);
-            await db.ConnectAsync();
-            await db.Test();
+            DatabaseMiddleware db = new DatabaseMiddleware();
 
             LoonieBot queen = new LoonieBot(token, db);
             await queen.Connect();
