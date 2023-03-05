@@ -5,12 +5,9 @@ namespace Cerberus {
         public static async Task Main(string[] args) {
             DotEnv envVars = new DotEnv();
             string token = envVars.Get("DISCORD_TOKEN");
-            string dbUser = envVars.Get("MY_SQL_USER");
-            string dbPass = envVars.Get("MY_SQL_PASS");
-            string dbName = envVars.Get("MY_SQL_DB");
-            string dbAddress = envVars.Get("MY_SQL_SERVER_ADDRESS");
+            string dbAddress = envVars.Get("REDIS_ADDRESS");
 
-            DatabaseMiddleware db = new DatabaseMiddleware();
+            DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 
             LoonieBot queen = new LoonieBot(token, db);
             await queen.Connect();
