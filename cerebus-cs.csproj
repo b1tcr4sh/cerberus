@@ -12,6 +12,8 @@
     <PackageReference Include="dsharpplus" Version="4.3.0" />
     <PackageReference Include="dsharpplus.slashcommands" Version="4.3.0" />
     <PackageReference Include="stackexchange.redis" Version="2.6.96" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="9.1.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.System.text.json" Version="9.1.0" />
     <PackageReference Include="vrchat.api" Version="1.11.1" />
   </ItemGroup>
 
