@@ -6,11 +6,16 @@ namespace Cerberus {
             DotEnv envVars = new DotEnv();
             string token = envVars.Get("DISCORD_TOKEN");
             string dbAddress = envVars.Get("REDIS_ADDRESS");
+            string vrcUsername = envVars.Get("VRC_USERNAME");
+            string vrcPassword = envVars.Get("VRC_PASSWORD");
+            string vrcApiKey = envVars.Get("VRC_API_KEY");
 
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 
-            LoonieBot queen = new LoonieBot(token, db);
+            LoonieBot queen = new LoonieBot(token, db, new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey });
             await queen.Connect();
+
+
             await Task.Delay(-1);
         }
     }

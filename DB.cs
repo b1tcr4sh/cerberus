@@ -1,7 +1,9 @@
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.System.Text.Json;
+using StackExchange.Redis.Extensions.Core;
 using System.Text.Json;
 using DSharpPlus.Entities;
+using VRChat.API.Model;
 
 namespace Cerberus.Database {
     public class DatabaseMiddleware {
@@ -34,6 +36,19 @@ namespace Cerberus.Database {
                 Emoji = emoji,
                 RoleId = (ulong) res
             };
+        }
+
+        public async Task<bool> InsertVrchatPair(DiscordMember member, User vrchatUser) {
+            return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.Id);
+        }
+        public async Task<string> FetchVrchatUser(DiscordMember member) {
+            RedisValue res = await _db.StringGetAsync(member.Id.ToString());
+
+            if (res.IsNullOrEmpty) {
+                throw new DatabseException("VRChat user hasn't been registered");
+            }
+
+            return (string) res;
         }
     }
     [System.Serializable]

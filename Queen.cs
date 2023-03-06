@@ -5,20 +5,32 @@ using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Cerberus.Commands;
 using Cerberus.Database;
+using VRChat.API.Client;
+using VRChat.API.Api;
+using VRChat.API.Model;
 
 namespace Cerberus {
     public class LoonieBot {
         private DiscordClient bot;
         private DatabaseMiddleware db;
-        public LoonieBot(string token, DatabaseMiddleware db) {
+        public LoonieBot(string token, DatabaseMiddleware db, VrchatLoginCredentials vrcLogin) {
             bot = new DiscordClient(new DiscordConfiguration {
                 Token = token,
                 Intents = DiscordIntents.All
             });
             this.db = db;
 
+            Configuration vrcConfig = new Configuration();
+            vrcConfig.Username = vrcLogin.Username;
+            vrcConfig.Password = vrcLogin.Password;
+            vrcConfig.AddApiKey("apiKey", vrcLogin.ApiKey);
+            vrcConfig.Timeout = 5000;
+            
+
             SlashCommandsExtension commands = bot.UseSlashCommands(new SlashCommandsConfiguration {
-                Services = new ServiceCollection().AddSingleton<DatabaseMiddleware>(db).BuildServiceProvider()
+                Services = new ServiceCollection().AddSingleton<DatabaseMiddleware>(db)
+                .AddSingleton<Configuration>()
+                .BuildServiceProvider()
             });
 
             commands.RegisterCommands<Vrchat>();
