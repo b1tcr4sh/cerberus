@@ -25,7 +25,11 @@ namespace Cerberus {
             vrcConfig.Password = vrcLogin.Password;
             vrcConfig.AddApiKey("apiKey", vrcLogin.ApiKey);
             vrcConfig.Timeout = 5000;
-            
+
+            AuthenticationApi auth = new AuthenticationApi(vrcConfig);
+            CurrentUser user = auth.GetCurrentUser();
+            // TwoFactorAuthCode authCode = new TwoFactorAuthCode();
+            // Verify2FAResult res = auth.Verify2FA(authCode);
 
             SlashCommandsExtension commands = bot.UseSlashCommands(new SlashCommandsConfiguration {
                 Services = new ServiceCollection().AddSingleton<DatabaseMiddleware>(db)

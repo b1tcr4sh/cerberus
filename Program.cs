@@ -9,6 +9,7 @@ namespace Cerberus {
             string vrcUsername = envVars.Get("VRC_USERNAME");
             string vrcPassword = envVars.Get("VRC_PASSWORD");
             string vrcApiKey = envVars.Get("VRC_API_KEY");
+            
 
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 

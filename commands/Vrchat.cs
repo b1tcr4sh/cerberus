@@ -31,6 +31,7 @@ namespace Cerberus.Commands {
             await ctx.DeferAsync();
             
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Getting user from VRChat..."));
+
             UsersApi api = new UsersApi(vrcApiConfig);
             User vrcUser;
             try {
@@ -49,7 +50,7 @@ namespace Cerberus.Commands {
             InteractivityResult<MessageReactionAddEventArgs> args = await queryMessage.WaitForReactionAsync(ctx.User);
 
             if (args.Result.Emoji.Equals(thumbsUp)) {
-                await db.InsertVrchatPair(ctx.Member, vrcId); // Need to fetch use from api to verify
+                await db.InsertVrchatPair(ctx.Member, vrcUser);
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Awesome, thanks"));
                 await queryMessage.DeleteAsync();
 
