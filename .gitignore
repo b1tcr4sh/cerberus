@@ -479,3 +479,7 @@ $RECYCLE.BIN/
 # Project Specific
 .env
 dump.rdb
+
+.vscode/*
+.vscode/
+.vscode

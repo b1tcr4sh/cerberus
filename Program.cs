@@ -1,4 +1,8 @@
-﻿using Cerberus.Database;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+using Cerberus.Database;
 
 namespace Cerberus {
     public static class Program {
@@ -13,11 +17,27 @@ namespace Cerberus {
 
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 
-            LoonieBot queen = new LoonieBot(token, db, new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey });
-            await queen.Connect();
+            // LoonieBot queen = 
+            // await queen.Connect();
 
+            VrchatLoginCredentials credentials = new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey };
 
-            await Task.Delay(-1);
+            IHost host = Host.CreateDefaultBuilder(args)
+            .ConfigureServices((ctx, collection) => {
+                collection.AddSingleton<DatabaseMiddleware>(db);
+                collection.AddSingleton<VrchatLoginCredentials>(credentials);
+                collection.AddSingleton<String>(token);
+                collection.AddSingleton<IHostedService, LoonieBot>();
+                collection.AddLogging();
+            })
+            .ConfigureLogging((context, builder) => {
+                builder.ClearProviders();
+                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                builder.AddConsole();
+            })
+            .Build();
+
+            await host.RunAsync();
         }
     }
 }
