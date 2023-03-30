@@ -54,7 +54,7 @@ namespace Cerberus {
         public async Task StartAsync(CancellationToken token) {
             await bot.ConnectAsync();
 
-            _timer = new Timer(UpdateStatusNumber, null, TimeSpan.Zero, TimeSpan.FromHours(1));
+            _timer = new Timer(UpdateStatusNumber, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
         }
         public async Task StopAsync(CancellationToken token) { 
             _timer.Change(Timeout.Infinite, 0);
