@@ -14,12 +14,7 @@ namespace Cerberus {
             string vrcPassword = envVars.Get("VRC_PASSWORD");
             string vrcApiKey = envVars.Get("VRC_API_KEY");
             
-
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
-
-            // LoonieBot queen = 
-            // await queen.Connect();
-
             VrchatLoginCredentials credentials = new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey };
 
             IHost host = Host.CreateDefaultBuilder(args)
@@ -27,7 +22,7 @@ namespace Cerberus {
                 collection.AddSingleton<DatabaseMiddleware>(db);
                 collection.AddSingleton<VrchatLoginCredentials>(credentials);
                 collection.AddSingleton<String>(token);
-                collection.AddSingleton<IHostedService, LoonieBot>();
+                collection.AddSingleton<ILoonieBot, LoonieBot>();
                 collection.AddLogging();
             })
             .ConfigureLogging((context, builder) => {

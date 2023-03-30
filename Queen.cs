@@ -12,10 +12,11 @@ using VRChat.API.Api;
 using VRChat.API.Model;
 
 namespace Cerberus {
-    public class LoonieBot : IHostedService, IDisposable {
+    public class LoonieBot : ILoonieBot {
         private DiscordClient bot;
         private DatabaseMiddleware db;
         private ILogger logger;
+        private Timer _timer;
         public LoonieBot(string token, DatabaseMiddleware db, VrchatLoginCredentials vrcLogin, ILogger<LoonieBot> _logger) {
             logger = _logger;
 
@@ -52,15 +53,27 @@ namespace Cerberus {
         }
         public async Task StartAsync(CancellationToken token) {
             await bot.ConnectAsync();
+
+            _timer = new Timer(UpdateStatusNumber, null, TimeSpan.Zero, TimeSpan.FromHours(1));
         }
-        public Task StopAsync(CancellationToken token) { return Task.CompletedTask; }
+        public async Task StopAsync(CancellationToken token) { 
+            _timer.Change(Timeout.Infinite, 0);
+            await bot.DisconnectAsync();
+            bot.Dispose();
+        }
         public void Dispose() {}
+
+        public void UpdateStatusNumber(object state) {
+            int onlinePlayers = VRChatUtils.OnlinePlayers().GetAwaiter().GetResult();
+
+            bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online).GetAwaiter().GetResult();
+        }
 
         private async Task OnReady(DiscordClient client, ReadyEventArgs eventArgs) {
             logger.LogInformation("Connected to {0}", client.CurrentUser.Username);
 
-            int onlinePlayers = await GetVRChatPlayerCount();
-            await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " Online Players", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
+            int onlinePlayers = await VRChatUtils.OnlinePlayers();
+            await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
         }
         private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {
             // await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
@@ -102,11 +115,9 @@ namespace Cerberus {
                 await member.RevokeRoleAsync(eventArgs.Guild.GetRole(listener.RoleId));
             }
         }
+    }
 
-        private async Task<int> GetVRChatPlayerCount() {
-            SystemApi sysApi = new SystemApi("https://api.vrchat.cloud/api/1");
-
-            return await sysApi.GetCurrentOnlineUsersAsync();
-        }
+    public interface ILoonieBot : IHostedService, IDisposable {
+        
     }
 }

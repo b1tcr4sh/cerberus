@@ -17,9 +17,7 @@ namespace Cerberus.Commands {
 
         [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task Online(InteractionContext ctx) {
-            SystemApi sysApi = new SystemApi("https://api.vrchat.cloud/api/1");
-
-            int onlinePlayers = await sysApi.GetCurrentOnlineUsersAsync();
+            int onlinePlayers = await VRChatUtils.OnlinePlayers();
 
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
             DiscordEmbed embed = embedBuilder.AddField("Currently Active Players", String.Format("{0}", onlinePlayers)).Build();
