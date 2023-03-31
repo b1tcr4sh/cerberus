@@ -22,7 +22,7 @@ namespace Cerberus {
                 collection.AddSingleton<DatabaseMiddleware>(db);
                 collection.AddSingleton<VrchatLoginCredentials>(credentials);
                 collection.AddSingleton<String>(token);
-                collection.AddSingleton<ILoonieBot, LoonieBot>();
+                collection.AddSingleton<IHostedService, LoonieBot>();
                 collection.AddLogging();
             })
             .ConfigureLogging((context, builder) => {

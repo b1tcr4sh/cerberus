@@ -76,7 +76,8 @@ namespace Cerberus {
             await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
         }
         private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {            
-            TimeSpan difference = DateTime.Now - eventArgs.Guild.JoinedAt.DateTime;
+            TimeSpan difference = DateTime.Now.ToUniversalTime() - eventArgs.Guild.JoinedAt.DateTime.ToUniversalTime();
+            logger.LogInformation("{0}", difference);
             if (difference.Minutes < 1 ) {
                 await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
             }
