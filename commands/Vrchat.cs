@@ -13,24 +13,29 @@ namespace Cerberus.Commands {
     [SlashCommandGroup("VRChat", "VRChat integration commands")]
     public class Vrchat : ApplicationCommandModule {
         public DatabaseMiddleware db { private get; set; }
-        public Configuration vrcApiConfig { private get; set; }
+        public VRChatAPI vrcApi { private get; set; }
 
         [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task Online(InteractionContext ctx) {
-            int onlinePlayers = await VRChatUtils.OnlinePlayers();
+            int onlinePlayers = await VRChatAPI.OnlinePlayers();
 
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
             DiscordEmbed embed = embedBuilder.AddField("Currently Active Players", String.Format("{0}", onlinePlayers)).Build();
 
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
         }
-        [SlashCommand("Register", "Register a VRChat user account with a Discord user")]
-        public async Task Register(InteractionContext ctx, [Option("VRChat-Account-Id", "Account ID")] string vrcId) {
+        [SlashCommand("Bind", "Bind a VRChat user account with a Discord user")]
+        public async Task Bind(InteractionContext ctx, [Option("VRChat-Account-Id", "Account ID")] string vrcId) {
             await ctx.DeferAsync();
+
+            if (!vrcApi.Authenticated()) {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Not logged into VRChat sorry man"));
+                return;
+            }
             
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Getting user from VRChat..."));
 
-            UsersApi api = new UsersApi(vrcApiConfig);
+            UsersApi api = new UsersApi(vrcApi.configuration);
             User vrcUser;
             try {
                 vrcUser = await api.GetUserAsync(vrcId);
@@ -60,5 +65,6 @@ namespace Cerberus.Commands {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("What?  Try again.. ?"));
             }
         }
+        // Register a group with the Discord server; autoinvites users once they're bound
     }
 }

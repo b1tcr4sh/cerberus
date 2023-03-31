@@ -10,6 +10,7 @@ namespace Cerberus {
     public class VrchatLoginCredentials {
         public string Username { get; set; }
         public string Password { get; set; }
-        public string ApiKey { get; set; }
+        public bool UsingOtp { get; set; }
+        // public string OtpCode = String.Empty;
     }
 }

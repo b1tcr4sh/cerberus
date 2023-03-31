@@ -12,13 +12,26 @@ namespace Cerberus {
             string dbAddress = envVars.Get("REDIS_ADDRESS");
             string vrcUsername = envVars.Get("VRC_USERNAME");
             string vrcPassword = envVars.Get("VRC_PASSWORD");
-            string vrcApiKey = envVars.Get("VRC_API_KEY");
+            bool usingOtp = Boolean.Parse(envVars.Get("VRC_OTP"));
             
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
-            VrchatLoginCredentials credentials = new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey };
+
+            // string otp = null;
+            // if (usingOtp) {
+            //     Console.Write("VRChat OTP > ");
+            //     otp = Console.ReadLine();
+            // }
+
+            VrchatLoginCredentials credentials = new VrchatLoginCredentials { 
+                Username = vrcUsername,
+                Password = vrcPassword,
+                UsingOtp = usingOtp,
+                // OtpCode = otp  
+            };
 
             IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((ctx, collection) => {
+                collection.AddSingleton<VRChatAPI>();
                 collection.AddSingleton<DatabaseMiddleware>(db);
                 collection.AddSingleton<VrchatLoginCredentials>(credentials);
                 collection.AddSingleton<String>(token);

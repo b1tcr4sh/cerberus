@@ -17,8 +17,10 @@ namespace Cerberus {
         private DatabaseMiddleware db;
         private ILogger logger;
         private Timer _timer;
-        public LoonieBot(string token, DatabaseMiddleware db, VrchatLoginCredentials vrcLogin, ILogger<LoonieBot> _logger) {
+        private VRChatAPI _vrcApi;
+        public LoonieBot(string token, DatabaseMiddleware db, VRChatAPI vrcApi, ILogger<LoonieBot> _logger) {
             logger = _logger;
+            _vrcApi = vrcApi;
 
             bot = new DiscordClient(new DiscordConfiguration {
                 Token = token,
@@ -26,20 +28,11 @@ namespace Cerberus {
             });
             this.db = db;
 
-            Configuration vrcConfig = new Configuration();
-            vrcConfig.Username = vrcLogin.Username;
-            vrcConfig.Password = vrcLogin.Password;
-            vrcConfig.AddApiKey("apiKey", vrcLogin.ApiKey);
-            vrcConfig.Timeout = 5000;
-
-            AuthenticationApi auth = new AuthenticationApi(vrcConfig);
-            CurrentUser user = auth.GetCurrentUser();
-            // TwoFactorAuthCode authCode = new TwoFactorAuthCode();
-            // Verify2FAResult res = auth.Verify2FA(authCode);
-
             SlashCommandsExtension commands = bot.UseSlashCommands(new SlashCommandsConfiguration {
-                Services = new ServiceCollection().AddSingleton<DatabaseMiddleware>(db)
+                Services = new ServiceCollection()
+                .AddSingleton<DatabaseMiddleware>(db)
                 .AddSingleton<Configuration>()
+                .AddSingleton<VRChatAPI>(vrcApi)
                 .BuildServiceProvider()
             });
 
@@ -53,6 +46,7 @@ namespace Cerberus {
         }
         public async Task StartAsync(CancellationToken token) {
             await bot.ConnectAsync();
+            await _vrcApi.Auth();
 
             _timer = new Timer(UpdateStatusNumber, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
         }
@@ -64,7 +58,7 @@ namespace Cerberus {
         public void Dispose() {}
 
         public void UpdateStatusNumber(object state) {
-            int onlinePlayers = VRChatUtils.OnlinePlayers().GetAwaiter().GetResult();
+            int onlinePlayers = VRChatAPI.OnlinePlayers().GetAwaiter().GetResult();
 
             bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online).GetAwaiter().GetResult();
         }
@@ -72,13 +66,12 @@ namespace Cerberus {
         private async Task OnReady(DiscordClient client, ReadyEventArgs eventArgs) {
             logger.LogInformation("Connected to {0}", client.CurrentUser.Username);
 
-            int onlinePlayers = await VRChatUtils.OnlinePlayers();
+            int onlinePlayers = await VRChatAPI.OnlinePlayers();
             await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
         }
         private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {            
             TimeSpan difference = DateTime.Now.ToUniversalTime() - eventArgs.Guild.JoinedAt.DateTime.ToUniversalTime();
-            logger.LogInformation("{0}", difference);
-            if (difference.Minutes < 1 ) {
+            if (difference < TimeSpan.FromMinutes(5)) {
                 await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
             }
         }
