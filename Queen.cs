@@ -75,8 +75,11 @@ namespace Cerberus {
             int onlinePlayers = await VRChatUtils.OnlinePlayers();
             await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
         }
-        private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {
-            // await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
+        private async Task OnGuildAvailable(DiscordClient client, GuildCreateEventArgs eventArgs) {            
+            TimeSpan difference = DateTime.Now - eventArgs.Guild.JoinedAt.DateTime;
+            if (difference.Minutes < 1 ) {
+                await eventArgs.Guild.SystemChannel.SendMessageAsync("Sup bitches!");
+            }
         }
         private async Task OnReaction(DiscordClient client, MessageReactionAddEventArgs eventArgs) {
             DiscordMember member = await eventArgs.Guild.GetMemberAsync(eventArgs.User.Id);
