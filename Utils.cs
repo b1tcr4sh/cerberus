@@ -58,8 +58,8 @@ namespace Cerberus {
         public object[] offlineFriends { get; set; }
     }
     public struct AuthTokens {
-        public string token { get; set; }
+        public string auth { get; set; }
         public bool using2FA { get; set; }
-        public string twoFactorToken { get; set; }
+        public string twoFactorAuth { get; set; }
     }
 }

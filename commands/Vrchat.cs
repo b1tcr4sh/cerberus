@@ -1,4 +1,7 @@
+using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Interactivity;
@@ -14,6 +17,7 @@ namespace Cerberus.Commands {
     public class Vrchat : ApplicationCommandModule {
         public DatabaseMiddleware db { private get; set; }
         public VRChatAPI vrcApi { private get; set; }
+        public ILogger<Vrchat> logger { private get; set; }
 
         [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task Online(InteractionContext ctx) {
@@ -66,5 +70,69 @@ namespace Cerberus.Commands {
             }
         }
         // Register a group with the Discord server; autoinvites users once they're bound
+    
+        [SlashCommand("Login", "Login to VRChat with associated account")]
+        [SlashRequireUserPermissions(Permissions.Administrator, true)]
+        public async Task Login(InteractionContext ctx) {
+            if (vrcApi.Authenticated()) {
+                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Portal's already open dude"));
+            }
+
+            await ctx.DeferAsync();
+
+            LoginResponseTypes res;
+            try {
+                res = await vrcApi.ManualAuthAsync();
+            } catch (HttpRequestException e) {
+                logger.LogWarning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
+                logger.LogTrace(e.Message);
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                return;
+            }
+
+            if (res == LoginResponseTypes.Connected) {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Got it, I'm in"));
+                return;
+            } else if (res == LoginResponseTypes.Failed) {
+                logger.LogWarning("Something went wrong trying to connect to vrchat");
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                return;
+            }
+
+            DiscordMessage otpRequest = await ctx.Member.SendMessageAsync("Hey, I'm going to need your 2FA OTP code for that.  (Great job for having it enabled btw) Just send it here and I'll log you in\n\nType **cancel** to cancel the operation");
+            logger.LogDebug("DM id: {0}", otpRequest.Channel.Id);
+            InteractivityResult<DiscordMessage> response = await otpRequest.Channel.GetNextMessageAsync(message => message.Author.Id == ctx.User.Id);
+            String content = response.Result.Content;
+
+            if (content.ToLower().Equals("cancel")) {
+                await response.Result.RespondAsync("Thanks (for wasting my time :rolling_eyes:)");
+                return;
+            }
+
+            Regex regex = new Regex("[0-9]{6}");
+            if (!regex.IsMatch(content)) {
+                await response.Result.RespondAsync("That doesn't look like an otp code?");
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Sorry, something went wrong"));
+                return;
+            }
+            
+            bool success;
+            Match match = regex.Match(content);
+            try {
+                success = await vrcApi.CompleteLoginWithTwoFactorAsync(match.Value);
+            } catch (HttpRequestException e) {
+                logger.LogWarning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
+                logger.LogTrace(e.Message);
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                return;
+            }
+
+            if (!success) {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                return;
+            }
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Got it!  The portal to the virtual world is open"));
+        }
     }
 }

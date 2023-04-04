@@ -33,6 +33,7 @@ namespace Cerberus {
                 .AddSingleton<DatabaseMiddleware>(db)
                 .AddSingleton<Configuration>()
                 .AddSingleton<VRChatAPI>(vrcApi)
+                .AddSingleton<ILogger>(_logger)
                 .BuildServiceProvider()
             });
 
@@ -46,7 +47,6 @@ namespace Cerberus {
         }
         public async Task StartAsync(CancellationToken token) {
             await bot.ConnectAsync();
-            await _vrcApi.Auth();
 
             _timer = new Timer(UpdateStatusNumber, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
         }
