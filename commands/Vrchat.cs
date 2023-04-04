@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System.Text.RegularExpressions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
@@ -17,7 +17,7 @@ namespace Cerberus.Commands {
     public class Vrchat : ApplicationCommandModule {
         public DatabaseMiddleware db { private get; set; }
         public VRChatAPI vrcApi { private get; set; }
-        public ILogger<Vrchat> logger { private get; set; }
+        private ILogger _logger = Log.Logger;
 
         [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task Online(InteractionContext ctx) {
@@ -78,14 +78,15 @@ namespace Cerberus.Commands {
                 await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Portal's already open dude"));
             }
 
+            _logger.Debug("{User} initiated login to VRChat", ctx.User.Username);
             await ctx.DeferAsync();
 
             LoginResponseTypes res;
             try {
                 res = await vrcApi.ManualAuthAsync();
             } catch (HttpRequestException e) {
-                logger.LogWarning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
-                logger.LogTrace(e.Message);
+                _logger.Warning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
+                _logger.Debug(e.Message);
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
                 return;
             }
@@ -94,13 +95,12 @@ namespace Cerberus.Commands {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Got it, I'm in"));
                 return;
             } else if (res == LoginResponseTypes.Failed) {
-                logger.LogWarning("Something went wrong trying to connect to vrchat");
+                _logger.Warning("Something went wrong trying to connect to vrchat");
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
                 return;
             }
 
             DiscordMessage otpRequest = await ctx.Member.SendMessageAsync("Hey, I'm going to need your 2FA OTP code for that.  (Great job for having it enabled btw) Just send it here and I'll log you in\n\nType **cancel** to cancel the operation");
-            logger.LogDebug("DM id: {0}", otpRequest.Channel.Id);
             InteractivityResult<DiscordMessage> response = await otpRequest.Channel.GetNextMessageAsync(message => message.Author.Id == ctx.User.Id);
             String content = response.Result.Content;
 
@@ -121,8 +121,8 @@ namespace Cerberus.Commands {
             try {
                 success = await vrcApi.CompleteLoginWithTwoFactorAsync(match.Value);
             } catch (HttpRequestException e) {
-                logger.LogWarning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
-                logger.LogTrace(e.Message);
+                _logger.Warning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
+                _logger.Debug(e.Message);
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
                 return;
             }

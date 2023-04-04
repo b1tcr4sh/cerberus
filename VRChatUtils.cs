@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -18,7 +18,7 @@ namespace Cerberus {
         private AuthTokens _tokens;
         private HttpClientHandler _handler;
         private HttpClient _http;
-        public VRChatAPI(VrchatLoginCredentials credentials, ILogger<VRChatAPI> logger) {
+        public VRChatAPI(VrchatLoginCredentials credentials, ILogger logger) {
             _credentials = credentials;
             _logger = logger;
 
@@ -50,8 +50,8 @@ namespace Cerberus {
                     await authApi.Verify2FAAsync(new TwoFactorAuthCode(code));
                 }
             } catch (ApiException e) {
-                _logger.LogWarning("Failed to authenticate with VRChat: {0}", e.ErrorCode);
-                _logger.LogTrace(e.Message);
+                _logger.Warning("Failed to authenticate with VRChat: {0}", e.ErrorCode);
+                _logger.Debug(e.Message);
                 return false;
             }
 
@@ -73,7 +73,7 @@ namespace Cerberus {
 
             HttpResponseMessage res = await _http.GetAsync("https://api.vrchat.cloud/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
             if (res.StatusCode != HttpStatusCode.OK) {
-                _logger.LogWarning("Couldn't login to VRChat; code: " + res.StatusCode);
+                _logger.Warning("Couldn't login to VRChat; code: " + res.StatusCode);
                 return LoginResponseTypes.Failed;
             }
 
@@ -84,7 +84,7 @@ namespace Cerberus {
 
             string authCookie = _handler.CookieContainer.GetCookies(new Uri("https://api.vrchat.cloud")).First().Value;
             _tokens = new AuthTokens { auth = authCookie, using2FA = false };
-            _logger.LogInformation("Logged into VRChat");
+            _logger.Information("Logged into VRChat");
             _authed = true;
             return LoginResponseTypes.Connected;
         }
@@ -96,7 +96,7 @@ namespace Cerberus {
 
             HttpResponseMessage postRes = await _http.PostAsync("https://api.vrchat.cloud/api/1/auth/twofactorauth/totp/verify?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26", content);
             if (postRes.StatusCode != HttpStatusCode.OK) {
-                _logger.LogWarning("Couldn't login to VRChat; code: " + postRes.StatusCode);
+                _logger.Warning("Couldn't login to VRChat; code: " + postRes.StatusCode);
                 return false;
             }
 
@@ -105,7 +105,7 @@ namespace Cerberus {
             string twoFactorToken = cookies.Where<Cookie>(cookie => cookie.Name.Equals("twoFactorAuth")).First().Value;
 
             _tokens = new AuthTokens { auth = authToken, twoFactorAuth = twoFactorToken, using2FA = true };
-            _logger.LogInformation("Logged into VRChat with 2FA");
+            _logger.Information("Logged into VRChat with 2FA");
             _authed = true;
             return true;
         }

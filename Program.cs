@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 using Cerberus.Database;
 
@@ -16,12 +18,6 @@ namespace Cerberus {
             
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 
-            // string otp = null;
-            // if (usingOtp) {
-            //     Console.Write("VRChat OTP > ");
-            //     otp = Console.ReadLine();
-            // }
-
             VrchatLoginCredentials credentials = new VrchatLoginCredentials { 
                 Username = vrcUsername,
                 Password = vrcPassword,
@@ -29,20 +25,27 @@ namespace Cerberus {
                 // OtpCode = otp  
             };
 
+            Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#elif RELEASE
+            .MinimumLevel.Information()
+#endif
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+
             IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((ctx, collection) => {
+                collection.AddSingleton(Log.Logger);
                 collection.AddSingleton<VRChatAPI>();
                 collection.AddSingleton<DatabaseMiddleware>(db);
                 collection.AddSingleton<VrchatLoginCredentials>(credentials);
                 collection.AddSingleton<String>(token);
                 collection.AddSingleton<IHostedService, LoonieBot>();
-                collection.AddLogging();
             })
-            .ConfigureLogging((context, builder) => {
-                builder.ClearProviders();
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-                builder.AddConsole();
-            })
+            .UseSerilog()
             .Build();
 
             await host.RunAsync();

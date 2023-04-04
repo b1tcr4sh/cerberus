@@ -14,7 +14,10 @@
     <PackageReference Include="dsharpplus.slashcommands" Version="4.3.0" />
     <PackageReference Include="microsoft.extensions.dependencyinjection" Version="7.0.0" />
     <PackageReference Include="microsoft.extensions.hosting" Version="7.0.1" />
-    <PackageReference Include="microsoft.extensions.logging" Version="7.0.0" />
+    <PackageReference Include="serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
+    <PackageReference Include="serilog.sinks.console" Version="4.1.0" />
+    <PackageReference Include="serilog.sinks.file" Version="5.0.0" />
     <PackageReference Include="stackexchange.redis" Version="2.6.96" />
     <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="9.1.0" />
     <PackageReference Include="StackExchange.Redis.Extensions.System.text.json" Version="9.1.0" />

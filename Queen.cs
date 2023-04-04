@@ -4,7 +4,7 @@ using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using Cerberus.Commands;
 using Cerberus.Database;
 using VRChat.API.Client;
@@ -18,13 +18,14 @@ namespace Cerberus {
         private ILogger logger;
         private Timer _timer;
         private VRChatAPI _vrcApi;
-        public LoonieBot(string token, DatabaseMiddleware db, VRChatAPI vrcApi, ILogger<LoonieBot> _logger) {
+        public LoonieBot(string token, DatabaseMiddleware db, VRChatAPI vrcApi, ILogger _logger) {
             logger = _logger;
             _vrcApi = vrcApi;
 
             bot = new DiscordClient(new DiscordConfiguration {
                 Token = token,
-                Intents = DiscordIntents.All
+                Intents = DiscordIntents.All,
+                LoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog()
             });
             this.db = db;
 
@@ -64,7 +65,7 @@ namespace Cerberus {
         }
 
         private async Task OnReady(DiscordClient client, ReadyEventArgs eventArgs) {
-            logger.LogInformation("Connected to {0}", client.CurrentUser.Username);
+            logger.Information("Connected to {0}", client.CurrentUser.Username);
 
             int onlinePlayers = await VRChatAPI.OnlinePlayers();
             await bot.UpdateStatusAsync(new DiscordActivity(onlinePlayers + " degenerates", ActivityType.Watching), DSharpPlus.Entities.UserStatus.Online);
