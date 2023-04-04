@@ -14,15 +14,12 @@ namespace Cerberus {
             string dbAddress = envVars.Get("REDIS_ADDRESS");
             string vrcUsername = envVars.Get("VRC_USERNAME");
             string vrcPassword = envVars.Get("VRC_PASSWORD");
-            bool usingOtp = Boolean.Parse(envVars.Get("VRC_OTP"));
             
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
 
             VrchatLoginCredentials credentials = new VrchatLoginCredentials { 
                 Username = vrcUsername,
-                Password = vrcPassword,
-                UsingOtp = usingOtp,
-                // OtpCode = otp  
+                Password = vrcPassword
             };
 
             Log.Logger = new LoggerConfiguration()
@@ -31,7 +28,7 @@ namespace Cerberus {
 #elif RELEASE
             .MinimumLevel.Information()
 #endif
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();
