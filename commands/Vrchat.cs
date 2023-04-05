@@ -105,6 +105,8 @@ namespace Cerberus.Commands {
             
             if (response.TimedOut) {
                 await otpRequest.Channel.SendMessageAsync("Took too long, sorry.  I can't wait around all day for your ass  (try again?)");
+                _logger.Warning("VRChat OTP request timed out after 1 minute");
+                await ctx.DeleteResponseAsync();
                 return;
             }
 
