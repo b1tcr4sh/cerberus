@@ -15,8 +15,6 @@ namespace Cerberus.VRChat {
 
         private VrchatLoginCredentials _credentials;
         private ILogger _logger;
-        private bool _authed = false; 
-        private AuthenticationApi _authApi;
         private AuthTokens _tokens;
         private HttpClientHandler _handler;
         private HttpClient _http;
@@ -66,7 +64,6 @@ namespace Cerberus.VRChat {
             string authCookie = _handler.CookieContainer.GetCookies(new Uri("https://api.vrchat.cloud")).First().Value;
             _tokens = new AuthTokens { auth = authCookie, using2FA = false };
             _logger.Information("Logged into VRChat");
-            _authed = true;
             return LoginResponseTypes.Connected;
         }
         public async Task<bool> CompleteLoginWithTwoFactorAsync(string otp) {
@@ -87,7 +84,6 @@ namespace Cerberus.VRChat {
 
             _tokens = new AuthTokens { auth = authToken, twoFactorAuth = twoFactorToken, using2FA = true };
             _logger.Information("Logged into VRChat with 2FA");
-            _authed = true;
             return true;
         }
         public async Task<Result<VRChatUser>> GetUserFromIdAsync(string id) {
