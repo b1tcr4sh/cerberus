@@ -5,11 +5,13 @@ using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Cerberus.Commands;
-using Cerberus.Database;
 using VRChat.API.Client;
 using VRChat.API.Api;
 using VRChat.API.Model;
+
+using Cerberus.Commands;
+using Cerberus.Database;
+using Cerberus.VRChat;
 
 namespace Cerberus {
     public class LoonieBot : ILoonieBot {

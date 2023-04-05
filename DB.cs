@@ -3,8 +3,7 @@ using StackExchange.Redis.Extensions.System.Text.Json;
 using StackExchange.Redis.Extensions.Core;
 using System.Text.Json;
 using DSharpPlus.Entities;
-using VRChat.API.Model;
-
+using Cerberus.VRChat;
 namespace Cerberus.Database {
     public class DatabaseMiddleware {
         private ConnectionMultiplexer _connection;
@@ -38,8 +37,8 @@ namespace Cerberus.Database {
             };
         }
 
-        public async Task<bool> InsertVrchatPair(DiscordMember member, User vrchatUser) {
-            return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.Id);
+        public async Task<bool> InsertVrchatPair(DiscordMember member, VRChatUser vrchatUser) {
+            return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.id);
         }
         public async Task<string> FetchVrchatUser(DiscordMember member) {
             RedisValue res = await _db.StringGetAsync(member.Id.ToString());

@@ -9,8 +9,10 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Entities;
 using VRChat.API.Api;
 using VRChat.API.Client;
-using VRChat.API.Model;
+using Ardalis.Result;
+
 using Cerberus.Database;
+using Cerberus.VRChat;
 
 namespace Cerberus.Commands {
     [SlashCommandGroup("VRChat", "VRChat integration commands")]
@@ -40,9 +42,9 @@ namespace Cerberus.Commands {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Getting user from VRChat..."));
 
             UsersApi api = new UsersApi(vrcApi.configuration);
-            User vrcUser;
+            VRChatUser vrcUser;
             try {
-                vrcUser = await api.GetUserAsync(vrcId);
+                vrcUser = await vrcApi.GetUserFromIdAsync(vrcId);
             } catch (ApiException e) {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Idk man, something went wrong.. ?"));
                 await Console.Error.WriteLineAsync(e.Message);
@@ -52,15 +54,24 @@ namespace Cerberus.Commands {
             DiscordEmoji thumbsUp = DiscordEmoji.FromName(ctx.Client, ":thumbsup:");
             DiscordEmoji thumbsDown = DiscordEmoji.FromName(ctx.Client, ":thumbsdown:");
             
-            DiscordMessage queryMessage = await ctx.Channel.SendMessageAsync(String.Format("@{0}, is this you? `{1}`\nReact with :thumbsup: or :thumbsdown:", ctx.User.Username, vrcUser.DisplayName));
+            DiscordMessage queryMessage = await ctx.Channel.SendMessageAsync(String.Format("@{0}, is this you? `{1}`\nReact with :thumbsup: or :thumbsdown:", ctx.User.Username, vrcUser.displayName));
 
             InteractivityResult<MessageReactionAddEventArgs> args = await queryMessage.WaitForReactionAsync(ctx.User);
 
             if (args.Result.Emoji.Equals(thumbsUp)) {
-                await db.InsertVrchatPair(ctx.Member, vrcUser);
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Awesome, thanks"));
-                await queryMessage.DeleteAsync();
+                Result res = await vrcUser.SendFriendRequestAsync();
+                if (res.Status == ResultStatus.NotFound) {
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("That user wasn't found for some reason.. ?"));
+                    return;
+                } else if (res.IsSuccess) {
+                    await db.InsertVrchatPair(ctx.Member, vrcUser);
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Awesome, shot you a friend request"));
+                } else {
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong on my end.. ?  Ping an admin or something I guess"));
+                    return;
+                }
 
+                await queryMessage.DeleteAsync();
             } else if (args.Result.Emoji.Equals(thumbsDown)) {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Try checking your id.. ?"));
                 await queryMessage.DeleteAsync();
@@ -83,7 +94,7 @@ namespace Cerberus.Commands {
 
             LoginResponseTypes res;
             try {
-                res = await vrcApi.ManualAuthAsync();
+                res = await vrcApi.AuthAsync();
             } catch (HttpRequestException e) {
                 _logger.Warning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
                 _logger.Debug(e.Message);

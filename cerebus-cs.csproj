@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ardalis.Result" Version="7.0.0" />
     <PackageReference Include="dsharpplus" Version="4.3.0" />
     <PackageReference Include="dsharpplus.interactivity" Version="4.3.0" />
     <PackageReference Include="dsharpplus.slashcommands" Version="4.3.0" />

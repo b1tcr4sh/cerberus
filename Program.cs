@@ -5,6 +5,7 @@ using Serilog.Core;
 using Serilog.Events;
 
 using Cerberus.Database;
+using Cerberus.VRChat;
 
 namespace Cerberus {
     public static class Program {
