@@ -85,12 +85,12 @@ namespace Cerberus.Commands {
         [SlashCommand("Login", "Login to VRChat with associated account")]
         [SlashRequireUserPermissions(Permissions.Administrator, true)]
         public async Task Login(InteractionContext ctx) {
+            await ctx.DeferAsync();
+
             if (vrcApi.Authenticated()) {
                 await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Portal's already open dude"));
             }
-
             _logger.Debug("{User} initiated login to VRChat", ctx.User.Username);
-            await ctx.DeferAsync();
 
             LoginResponseTypes res;
             try {
