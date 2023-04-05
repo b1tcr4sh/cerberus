@@ -20,6 +20,7 @@ namespace Cerberus.Database {
             return db;
         }
 
+        public bool Connected() => _connection.IsConnected;
         public async Task<bool> RegisterReactionListenerAsync(Reactionlistener listener) {
             return await _db.StringSetAsync(listener.MessageId + "-" + listener.Emoji.Name, listener.RoleId.ToString());
         }

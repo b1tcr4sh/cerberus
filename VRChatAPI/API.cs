@@ -24,18 +24,11 @@ namespace Cerberus.VRChat {
             _credentials = credentials;
             _logger = logger;
 
-            Dictionary<String, String> apiKeys = new Dictionary<string, string>();
-            apiKeys.Add("apiKey", "JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
-            apiKeys.Add("auth", "");
-            apiKeys.Add("twoFactorAuth", "");
+            _handler = new HttpClientHandler();
+            _handler.CookieContainer = new CookieContainer();
+            _http = new HttpClient(_handler);
 
-            configuration = new Configuration {
-                BasePath = Const.BASE_PATH,
-                ApiKey = apiKeys,
-                Username = credentials.Username,
-                Password = credentials.Password,
-                UserAgent = "Cerberus / v0.1"
-            };
+            _http.DefaultRequestHeaders.Add("User-Agent", "Cerberus / v0.1");
         }
         public bool Authenticated() {
             HttpResponseMessage res = _http.GetAsync(Const.BASE_PATH + "/auth").Result;
@@ -52,19 +45,14 @@ namespace Cerberus.VRChat {
         }
 
         public async Task<LoginResponseTypes> AuthAsync() {
-            _handler = new HttpClientHandler();
-            _handler.CookieContainer = new CookieContainer();
-            _http = new HttpClient(_handler);
-
             // base64(urlencode(username):urlencode(password))
             string encodedUsername = HttpUtility.UrlEncode(_credentials.Username);
             string encodedPassword = HttpUtility.UrlEncode(_credentials.Password);
             string base64Encoded = Base64Encode(String.Format("{0}:{1}", encodedUsername, encodedPassword));
 
             _http.DefaultRequestHeaders.Add("Authorization", "Basic " + base64Encoded);  
-            _http.DefaultRequestHeaders.Add("User-Agent", "Cerberus / v0.1");
 
-            HttpResponseMessage res = await _http.GetAsync(Const.BASE_PATH + "/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
+            HttpResponseMessage res = await _http.GetAsync(Const.BASE_PATH + "/auth/user?apiKey=" + Const.API_KEY);
             if (res.StatusCode != HttpStatusCode.OK) {
                 _logger.Warning("Couldn't login to VRChat; code: " + res.StatusCode);
                 return LoginResponseTypes.Failed;
@@ -87,7 +75,7 @@ namespace Cerberus.VRChat {
             body.Add("code", otp);
             FormUrlEncodedContent content = new FormUrlEncodedContent(body);
 
-            HttpResponseMessage postRes = await _http.PostAsync(Const.BASE_PATH + "/auth/twofactorauth/totp/verify?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26", content);
+            HttpResponseMessage postRes = await _http.PostAsync(Const.BASE_PATH + "/auth/twofactorauth/totp/verify?apiKey=" + Const.API_KEY, content);
             if (postRes.StatusCode != HttpStatusCode.OK) {
                 _logger.Warning("Couldn't login to VRChat; code: " + postRes.StatusCode);
                 return false;
@@ -105,7 +93,7 @@ namespace Cerberus.VRChat {
         public async Task<Result<VRChatUser>> GetUserFromIdAsync(string id) {
             Stream res;
             try {
-                res = await _http.GetStreamAsync(Const.BASE_PATH + "/users/" + id);
+                res = await _http.GetStreamAsync(Const.BASE_PATH + "/users/" + id + "?apiKey=" + Const.API_KEY);
             } catch (HttpRequestException e) {
                 _logger.Warning(e.Message);
                 return Result<VRChatUser>.NotFound();
