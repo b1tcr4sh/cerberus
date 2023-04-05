@@ -101,7 +101,7 @@ namespace Cerberus.Commands {
             }
 
             DiscordMessage otpRequest = await ctx.Member.SendMessageAsync("Hey, I'm going to need your 2FA OTP code for that.  (Great job for having it enabled btw) Just send it here and I'll log you in\n\nType **cancel** to cancel the operation");
-            InteractivityResult<DiscordMessage> response = await otpRequest.Channel.GetNextMessageAsync(message => message.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+            InteractivityResult<DiscordMessage> response = await otpRequest.Channel.GetNextMessageAsync(TimeSpan.FromMinutes(1));
             
             if (response.TimedOut) {
                 await otpRequest.Channel.SendMessageAsync("Took too long, sorry.  I can't wait around all day for your ass  (try again?)");
@@ -111,8 +111,6 @@ namespace Cerberus.Commands {
             }
 
             String content = response.Result.Content;
-
-
             if (content.ToLower().Equals("cancel")) {
                 await response.Result.RespondAsync("Thanks (for wasting my time :rolling_eyes:)");
                 return;
