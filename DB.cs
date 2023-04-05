@@ -38,10 +38,10 @@ namespace Cerberus.Database {
             };
         }
 
-        public async Task<bool> InsertVrchatPair(DiscordMember member, VRChatUser vrchatUser) {
+        public async Task<bool> InsertVrchatPairAsync(DiscordMember member, VRChatUser vrchatUser) {
             return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.id);
         }
-        public async Task<string> FetchVrchatUser(DiscordMember member) {
+        public async Task<string> FetchVrchatUserAsync(DiscordMember member) {
             RedisValue res = await _db.StringGetAsync(member.Id.ToString());
 
             if (res.IsNullOrEmpty) {

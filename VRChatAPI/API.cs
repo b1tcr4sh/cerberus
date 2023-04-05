@@ -99,6 +99,41 @@ namespace Cerberus.VRChat {
             user.init(_http);
             return user;
         }
+        public async Task<Result<VRChatInstance>> GetInstanceAsync(string id, string worldId) {
+            Stream res;
+            try {
+                res = await _http.GetStreamAsync(String.Format("{0}/instances/{1}:{2}?apiKey={3}", Const.BASE_PATH, worldId, id, Const.API_KEY));
+            } catch (HttpRequestException e) {
+                _logger.Warning(e.Message);
+                return Result<VRChatInstance>.Error();
+            }
+
+            byte[] buffer = new byte[4];
+            await res.ReadAsync(buffer, 0, 4);
+            if (BitConverter.ToString(buffer).Equals("null")) {
+                return Result<VRChatInstance>.NotFound();
+            }
+
+            VRChatInstance instance = JsonSerializer.Deserialize<VRChatInstance>(res);
+            instance.Init(_http);
+            return instance;
+        }
+        public async Task<Result<VRChatWorld>> GetWorldAsync(string id) {
+            Stream res;
+            try {
+                res = await _http.GetStreamAsync(String.Format("{0}/worlds/{1}?apiKey={2}", Const.BASE_PATH, id, Const.API_KEY));
+            } catch (HttpRequestException e) {
+                _logger.Warning(e.Message);
+                if (e.StatusCode == HttpStatusCode.NotFound) {
+                    return Result<VRChatWorld>.NotFound();
+                }
+                return Result<VRChatWorld>.Error();
+            }
+
+            VRChatWorld world = JsonSerializer.Deserialize<VRChatWorld>(res);
+            world.Init(_http);
+            return world;
+        }
 
 
         private static string Base64Encode(string plainText)
