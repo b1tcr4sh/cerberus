@@ -62,4 +62,8 @@ namespace Cerberus {
         public bool using2FA { get; set; }
         public string twoFactorAuth { get; set; }
     }
+    public struct VerifyAuthResponse {
+        bool ok { get; set; }
+        string token { get; set; }
+    }
 }

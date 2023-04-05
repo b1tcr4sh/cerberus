@@ -11,6 +11,8 @@ using VRChat.API.Client;
 namespace Cerberus {
     public class VRChatAPI {
         public Configuration configuration;
+
+        private const string BASE_PATH = "https://api.vrchat.cloud/api/1"; 
         private VrchatLoginCredentials _credentials;
         private ILogger _logger;
         private bool _authed = false; 
@@ -28,16 +30,23 @@ namespace Cerberus {
             apiKeys.Add("twoFactorAuth", "");
 
             configuration = new Configuration {
-                BasePath = "https://api.vrchat.cloud/api/1",
+                BasePath = BASE_PATH,
                 ApiKey = apiKeys,
                 Username = credentials.Username,
                 Password = credentials.Password,
                 UserAgent = "Cerberus / v0.1"
             };
         }
-        public bool Authenticated() => _authed;
+        public async Task<bool> Authenticated() {
+            HttpResponseMessage res = await _http.GetAsync(BASE_PATH + "/auth");
+        
+            if (res.StatusCode != HttpStatusCode.OK) {
+                return false;
+            }
+            return true;
+        }
         public static async Task<int> OnlinePlayers() {
-            SystemApi sysApi = new SystemApi("https://api.vrchat.cloud/api/1");
+            SystemApi sysApi = new SystemApi(BASE_PATH);
 
             return await sysApi.GetCurrentOnlineUsersAsync();
         }
@@ -71,7 +80,7 @@ namespace Cerberus {
             _http.DefaultRequestHeaders.Add("Authorization", "Basic " + base64Encoded);  
             _http.DefaultRequestHeaders.Add("User-Agent", "Cerberus / v0.1");
 
-            HttpResponseMessage res = await _http.GetAsync("https://api.vrchat.cloud/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
+            HttpResponseMessage res = await _http.GetAsync(BASE_PATH + "/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
             if (res.StatusCode != HttpStatusCode.OK) {
                 _logger.Warning("Couldn't login to VRChat; code: " + res.StatusCode);
                 return LoginResponseTypes.Failed;
@@ -94,7 +103,7 @@ namespace Cerberus {
             body.Add("code", otp);
             FormUrlEncodedContent content = new FormUrlEncodedContent(body);
 
-            HttpResponseMessage postRes = await _http.PostAsync("https://api.vrchat.cloud/api/1/auth/twofactorauth/totp/verify?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26", content);
+            HttpResponseMessage postRes = await _http.PostAsync(BASE_PATH + "/auth/twofactorauth/totp/verify?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26", content);
             if (postRes.StatusCode != HttpStatusCode.OK) {
                 _logger.Warning("Couldn't login to VRChat; code: " + postRes.StatusCode);
                 return false;
