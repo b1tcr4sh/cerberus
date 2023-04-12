@@ -3,7 +3,9 @@ using StackExchange.Redis.Extensions.System.Text.Json;
 using StackExchange.Redis.Extensions.Core;
 using System.Text.Json;
 using DSharpPlus.Entities;
+using Ardalis.Result;
 using Cerberus.VRChat;
+
 namespace Cerberus.Database {
     public class DatabaseMiddleware {
         private ConnectionMultiplexer _connection;
@@ -41,11 +43,11 @@ namespace Cerberus.Database {
         public async Task<bool> InsertVrchatPairAsync(DiscordMember member, VRChatUser vrchatUser) {
             return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.id);
         }
-        public async Task<string> FetchVrchatUserAsync(DiscordMember member) {
+        public async Task<Result<string>> FetchVrchatUserAsync(DiscordMember member) {
             RedisValue res = await _db.StringGetAsync(member.Id.ToString());
 
             if (res.IsNullOrEmpty) {
-                throw new DatabseException("VRChat user hasn't been registered");
+                return Result<string>.NotFound();
             }
 
             return (string) res;

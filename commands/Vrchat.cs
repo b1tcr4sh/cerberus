@@ -34,6 +34,14 @@ namespace Cerberus.Commands {
         public async Task Bind(InteractionContext ctx, [Option("VRChat-Account-Id", "Account ID")] string vrcId) {
             await ctx.DeferAsync();
 
+            Result<string> userRes = await db.FetchVrchatUserAsync(ctx.Member);
+            if (userRes.IsSuccess) {
+                VRChatUser user = await vrcApi.GetUserFromIdAsync(vrcId);
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Sorry, already registered to " + user.displayName));
+                return;
+            }
+ 
+
             if (!vrcApi.Authenticated()) {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Not logged into VRChat sorry man"));
                 return;
