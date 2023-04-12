@@ -67,6 +67,12 @@ namespace Cerberus.Commands {
             await queryMessage.CreateReactionAsync(thumbsDown);
             InteractivityResult<MessageReactionAddEventArgs> args = await queryMessage.WaitForReactionAsync(ctx.User, TimeSpan.FromMinutes(1));
 
+            if (args.TimedOut) {
+                await queryMessage.DeleteAsync();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Damnm you took a while on that. Maybe try again?"));
+                return;
+            }
+
             if (args.Result.Emoji.Equals(thumbsUp)) {
                 Result res = await vrcUser.SendFriendRequestAsync();
                 if (res.Status == ResultStatus.NotFound) {
@@ -167,6 +173,11 @@ namespace Cerberus.Commands {
             await ctx.DeferAsync();
             
             IReadOnlyList<DiscordMember> member = await ctx.Guild.SearchMembersAsync(username);
+            if (member.Count < 1) {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Doesn't look like that user exists..?"));
+                return;
+            }
+
             string vrcId = await db.FetchVrchatUserAsync(member[0]);
             Result<VRChatUser> res = await vrcApi.GetUserFromIdAsync(vrcId);
 
@@ -185,14 +196,21 @@ namespace Cerberus.Commands {
             .WithImageUrl(res.Value.profilePicOverride.Equals(String.Empty) ? res.Value.currentAvatarThumbnailImageUrl : res.Value.profilePicOverride)
             .AddField(res.Value.displayName, res.Value.statusDescription + " (" + res.Value.status + ")");            
             
+            if (res.Value.state.Equals("offline")) {
+                await ctx.Channel.SendMessageAsync(builder.Build());
+                await ctx.DeleteResponseAsync();
+                return;
+            } else if (res.Value.Equals("active")) {
+                builder.AddField("Location", "On the website");
+                await ctx.Channel.SendMessageAsync(builder.Build());
+                await ctx.DeleteResponseAsync();
+                return;
+            }
+
             if (instanceId.Equals("private")) {
                 builder.AddField("Location", "In a private world");
                 await ctx.Channel.SendMessageAsync(builder.Build());
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder());
-                return;
-            } else if (instanceId.Equals("offline")) {
-                await ctx.Channel.SendMessageAsync(builder.Build());
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder());
+                await ctx.DeleteResponseAsync();
                 return;
             } 
 
@@ -202,7 +220,7 @@ namespace Cerberus.Commands {
                 builder.AddField("Location", "Location couldn't be found... ?");
 
                 await ctx.Channel.SendMessageAsync(builder.Build());
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder());
+                await ctx.DeleteResponseAsync();
                 return;
             } 
             VRChatInstance instance = instanceRes.Value;
@@ -213,7 +231,7 @@ namespace Cerberus.Commands {
                 builder.AddField("Location", "Location couldn't be found... ?");
 
                 await ctx.Channel.SendMessageAsync(builder.Build());
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder());
+                await ctx.DeleteResponseAsync();
                 return;
             }
             VRChatWorld world = worldRes.Value;
