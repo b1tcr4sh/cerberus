@@ -2,6 +2,8 @@ using DSharpPlus;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Interactivity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -39,6 +41,7 @@ namespace Cerberus {
                 .AddSingleton<ILogger>(_logger)
                 .BuildServiceProvider()
             });
+            bot.UseInteractivity();
 
             commands.RegisterCommands<Vrchat>();
             commands.RegisterCommands<Util>();
