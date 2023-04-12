@@ -92,7 +92,14 @@ namespace Cerberus.VRChat {
                 res = await _http.GetStreamAsync(Const.BASE_PATH + "/users/" + id + "?apiKey=" + Const.API_KEY);
             } catch (HttpRequestException e) {
                 _logger.Warning(e.Message);
-                return Result<VRChatUser>.NotFound();
+                switch (e.StatusCode) {
+                    case HttpStatusCode.NotFound:
+                        return Result<VRChatUser>.NotFound();
+                    case HttpStatusCode.Forbidden:
+                        return Result<VRChatUser>.Forbidden();
+                    default:
+                        return Result<VRChatUser>.Error();
+                }
             }
             
             VRChatUser user = await JsonSerializer.DeserializeAsync<VRChatUser>(res);

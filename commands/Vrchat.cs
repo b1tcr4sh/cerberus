@@ -42,48 +42,43 @@ namespace Cerberus.Commands {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Getting user from VRChat..."));
 
             // UsersApi api = new UsersApi(vrcApi.configuration);
-            VRChatUser vrcUser;
-            try {
-                vrcUser = await vrcApi.GetUserFromIdAsync(vrcId);
-            } catch (ApiException e) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Idk man, something went wrong.. ?"));
-                await Console.Error.WriteLineAsync(e.Message);
-                return;
-            }
+            VRChatUser vrcUser = await vrcApi.GetUserFromIdAsync(vrcId);
 
             DiscordEmoji thumbsUp = DiscordEmoji.FromName(ctx.Client, ":thumbsup:");
             DiscordEmoji thumbsDown = DiscordEmoji.FromName(ctx.Client, ":thumbsdown:");
 
             DiscordEmbed embed = new DiscordEmbedBuilder()
             .WithColor(new DiscordColor("#b128b4"))
-            .WithImageUrl(vrcUser.profilePicOverride is null ? vrcUser.currentAvatarThumbnailImageUrl : vrcUser.profilePicOverride)
+            .WithImageUrl(vrcUser.profilePicOverride.Equals(String.Empty) ? vrcUser.currentAvatarThumbnailImageUrl : vrcUser.profilePicOverride)
             .WithTitle("Is this you?")
             .WithDescription(vrcUser.displayName)
             .Build();
             DiscordMessage queryMessage = await ctx.Channel.SendMessageAsync(embed);
 
+            await queryMessage.CreateReactionAsync(thumbsUp);
+            await queryMessage.CreateReactionAsync(thumbsDown);
             InteractivityResult<MessageReactionAddEventArgs> args = await queryMessage.WaitForReactionAsync(ctx.User, TimeSpan.FromMinutes(1));
 
             if (args.Result.Emoji.Equals(thumbsUp)) {
                 Result res = await vrcUser.SendFriendRequestAsync();
                 if (res.Status == ResultStatus.NotFound) {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("That user wasn't found for some reason.. ?"));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("That user wasn't found for some reason.. ?"));
                     return;
                 } else if (res.IsSuccess) {
                     await db.InsertVrchatPairAsync(ctx.Member, vrcUser);
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Awesome, shot you a friend request"));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Awesome, shot you a friend request"));
                 } else {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong on my end.. ?  Ping an admin or something I guess"));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong on my end.. ?  Ping an admin or something I guess"));
                     return;
                 }
 
                 await queryMessage.DeleteAsync();
             } else if (args.Result.Emoji.Equals(thumbsDown)) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Try checking your id.. ?"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Try checking your id.. ?"));
                 await queryMessage.DeleteAsync();
 
             } else {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("What?  Try again.. ?"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("What?  Try again.. ?"));
             }
         }
         // Register a group with the Discord server; autoinvites users once they're bound
@@ -218,7 +213,7 @@ namespace Cerberus.Commands {
             // Create world etc fields.....
 
             await ctx.Channel.SendMessageAsync(builder.Build());
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder());
+            await ctx.DeleteResponseAsync();
         }
     }
 }

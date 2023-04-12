@@ -43,7 +43,7 @@ namespace Cerberus.VRChat {
         }
 
         public async Task<Result> SendFriendRequestAsync() {
-            HttpResponseMessage res = await _http.PostAsync(Const.BASE_PATH + "/" + id + "/friendRequest?apiKey=" + Const.API_KEY, new FormUrlEncodedContent(new Dictionary<string, string>()));
+            HttpResponseMessage res = await _http.PostAsync(Const.BASE_PATH + "/user/" + id + "/friendRequest?apiKey=" + Const.API_KEY, new FormUrlEncodedContent(new Dictionary<string, string>()));
         
             switch (res.StatusCode) {
                 case HttpStatusCode.NotFound:
