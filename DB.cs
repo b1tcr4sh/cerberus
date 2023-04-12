@@ -3,7 +3,8 @@ using StackExchange.Redis.Extensions.System.Text.Json;
 using StackExchange.Redis.Extensions.Core;
 using System.Text.Json;
 using DSharpPlus.Entities;
-using VRChat.API.Model;
+using Ardalis.Result;
+using Cerberus.VRChat;
 
 namespace Cerberus.Database {
     public class DatabaseMiddleware {
@@ -21,6 +22,7 @@ namespace Cerberus.Database {
             return db;
         }
 
+        public bool Connected() => _connection.IsConnected;
         public async Task<bool> RegisterReactionListenerAsync(Reactionlistener listener) {
             return await _db.StringSetAsync(listener.MessageId + "-" + listener.Emoji.Name, listener.RoleId.ToString());
         }
@@ -38,14 +40,14 @@ namespace Cerberus.Database {
             };
         }
 
-        public async Task<bool> InsertVrchatPair(DiscordMember member, User vrchatUser) {
-            return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.Id);
+        public async Task<bool> InsertVrchatPairAsync(DiscordMember member, VRChatUser vrchatUser) {
+            return await _db.StringSetAsync(member.Id.ToString(), vrchatUser.id);
         }
-        public async Task<string> FetchVrchatUser(DiscordMember member) {
+        public async Task<Result<string>> FetchVrchatUserAsync(DiscordMember member) {
             RedisValue res = await _db.StringGetAsync(member.Id.ToString());
 
             if (res.IsNullOrEmpty) {
-                throw new DatabseException("VRChat user hasn't been registered");
+                return Result<string>.NotFound();
             }
 
             return (string) res;

@@ -1,13 +1,35 @@
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
+using Serilog;
+
 using Cerberus.Database;
+using Cerberus.VRChat;
 
 namespace Cerberus.Commands {
     [SlashCommandGroup("Util", "General utility commands")]
     public class Util : ApplicationCommandModule {
         public DatabaseMiddleware Db { private get; set; }
+        public VRChatAPI vrcApi { private get; set; }
+        private ILogger _logger = Log.Logger;
 
+        [SlashCommand("Ping", "Table Tennis or something idk")]
+        public async Task Ping(InteractionContext ctx) {
+            await ctx.DeferAsync();
+
+            bool vrcConnected = vrcApi.Authenticated();
+            bool dbConnected = Db.Connected();
+
+            DiscordEmbed embed = new DiscordEmbedBuilder()
+            .WithColor(new DiscordColor("#b128b4"))
+            .WithTitle("Pong!")
+            .AddField("VRChat Connected", vrcConnected.ToString(), false)
+            .AddField("Database Connected", dbConnected.ToString(), false)
+            .Build();
+
+            await ctx.Channel.SendMessageAsync(embed);
+            await ctx.DeleteResponseAsync();
+        }
         [SlashCommand("Reaction-Role", "Creates a reaction-role listener")]
         public async Task ReactionRole(InteractionContext ctx, [Option("Role", "Name of the role to associate")] string roleName,
             [Option("MessageID", "ID of the message to attach to")] string messageId,

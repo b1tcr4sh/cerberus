@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 using Cerberus.Database;
+using Cerberus.VRChat;
 
 namespace Cerberus {
     public static class Program {
@@ -12,24 +15,35 @@ namespace Cerberus {
             string dbAddress = envVars.Get("REDIS_ADDRESS");
             string vrcUsername = envVars.Get("VRC_USERNAME");
             string vrcPassword = envVars.Get("VRC_PASSWORD");
-            string vrcApiKey = envVars.Get("VRC_API_KEY");
             
             DatabaseMiddleware db = await DatabaseMiddleware.ConnectAsync(dbAddress);
-            VrchatLoginCredentials credentials = new VrchatLoginCredentials { Username = vrcUsername, Password = vrcPassword, ApiKey = vrcApiKey };
+
+            VrchatLoginCredentials credentials = new VrchatLoginCredentials { 
+                Username = vrcUsername,
+                Password = vrcPassword
+            };
+
+            Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#elif RELEASE
+            .MinimumLevel.Information()
+#endif
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
 
             IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((ctx, collection) => {
+                collection.AddSingleton(Log.Logger);
+                collection.AddSingleton<VRChatAPI>();
                 collection.AddSingleton<DatabaseMiddleware>(db);
                 collection.AddSingleton<VrchatLoginCredentials>(credentials);
                 collection.AddSingleton<String>(token);
                 collection.AddSingleton<IHostedService, LoonieBot>();
-                collection.AddLogging();
             })
-            .ConfigureLogging((context, builder) => {
-                builder.ClearProviders();
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-                builder.AddConsole();
-            })
+            .UseSerilog()
             .Build();
 
             await host.RunAsync();
