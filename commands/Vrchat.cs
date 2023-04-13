@@ -236,7 +236,7 @@ namespace Cerberus.Commands {
             }
             VRChatWorld world = worldRes.Value;
 
-            // Create world etc fields.....
+            builder.AddField("Location", String.Format("{0} ({1}/{2})", worldRes.Value.name, instanceRes.Value.n_users, instanceRes.Value.capacity));
 
             await ctx.Channel.SendMessageAsync(builder.Build());
             await ctx.DeleteResponseAsync();

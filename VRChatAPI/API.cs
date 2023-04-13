@@ -137,7 +137,7 @@ namespace Cerberus.VRChat {
                 return Result<VRChatWorld>.Error();
             }
 
-            VRChatWorld world = JsonSerializer.Deserialize<VRChatWorld>(res);
+            VRChatWorld world = JsonSerializer.Deserialize<VRChatWorld>(res, new JsonSerializerOptions() { PropertyNameCaseInsensitive = false });
             world.Init(_http);
             return world;
         }
