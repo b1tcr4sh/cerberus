@@ -1,6 +1,7 @@
+using DSharpPlus;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.EventArgs;
@@ -34,7 +35,7 @@ namespace Cerberus.Commands {
             await ctx.DeleteResponseAsync();
         }
         [ContextMenu(DSharpPlus.ApplicationCommandType.MessageContextMenu, "Add Reaction Role")]
-        [AdminPermissionCheck]
+        [SlashRequireUserPermissions(Permissions.Administrator, true)]
         public async Task ReactionRole(ContextMenuContext ctx) {
 
             await ctx.DeferAsync();

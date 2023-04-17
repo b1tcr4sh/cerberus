@@ -31,35 +31,24 @@ namespace Cerberus.Commands {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
         }
         [SlashCommand("Bind", "Bind a VRChat user account with a Discord user")]
-        public async Task Bind(InteractionContext ctx, [Option("VRChat-Account-Id", "Account ID")] string vrcId) {
+        public async Task Bind(InteractionContext ctx, [Option("VRChat-Username", "Username")] string vrcId) {
             await ctx.DeferAsync();
-
-            Result<string> userRes = await db.FetchVrchatUserAsync(ctx.Member);
-            if (userRes.IsSuccess) {
-                VRChatUser user = await vrcApi.GetUserFromIdAsync(vrcId);
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Sorry, already registered to " + user.displayName));
-                return;
-            }
- 
-
             if (!vrcApi.Authenticated()) {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Not logged into VRChat sorry man"));
                 return;
             }
-            
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Getting user from VRChat..."));
 
-            // UsersApi api = new UsersApi(vrcApi.configuration);
-            VRChatUser vrcUser = await vrcApi.GetUserFromIdAsync(vrcId);
+            ShortUser[] users = await vrcApi.SearchUserAsync(vrcId, 1);
+            ShortUser shortUser = users[0];
 
             DiscordEmoji thumbsUp = DiscordEmoji.FromName(ctx.Client, ":thumbsup:");
             DiscordEmoji thumbsDown = DiscordEmoji.FromName(ctx.Client, ":thumbsdown:");
 
             DiscordEmbed embed = new DiscordEmbedBuilder()
             .WithColor(new DiscordColor("#b128b4"))
-            .WithImageUrl(vrcUser.profilePicOverride.Equals(String.Empty) ? vrcUser.currentAvatarThumbnailImageUrl : vrcUser.profilePicOverride)
+            .WithImageUrl(shortUser.profilePicOverride.Equals(String.Empty) ? shortUser.currentAvatarThumbnailImageUrl : shortUser.profilePicOverride)
             .WithTitle("Is this you?")
-            .WithDescription(vrcUser.displayName)
+            .WithDescription(shortUser.displayName)
             .Build();
             DiscordMessage queryMessage = await ctx.Channel.SendMessageAsync(embed);
 
@@ -69,33 +58,37 @@ namespace Cerberus.Commands {
 
             if (args.TimedOut) {
                 await queryMessage.DeleteAsync();
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Damnm you took a while on that. Maybe try again?"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Damn you took a while on that. Maybe try again?"));
                 return;
             }
 
-            if (args.Result.Emoji.Equals(thumbsUp)) {
-                Result res = await vrcUser.SendFriendRequestAsync();
-                if (res.Status == ResultStatus.NotFound) {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("That user wasn't found for some reason.. ?"));
-                    return;
-                } else if (res.IsSuccess) {
-                    await db.InsertVrchatPairAsync(ctx.Member, vrcUser);
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Awesome, shot you a friend request"));
-                } else {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong on my end.. ?  Ping an admin or something I guess"));
-                    return;
-                }
-
-                await queryMessage.DeleteAsync();
-            } else if (args.Result.Emoji.Equals(thumbsDown)) {
+            if (args.Result.Emoji.Equals(thumbsDown)) {
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Try checking your id.. ?"));
                 await queryMessage.DeleteAsync();
-
-            } else {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("What?  Try again.. ?"));
             }
+
+            Result<string> userRes = await db.FetchVrchatUserAsync(ctx.Member);
+            if (userRes.IsSuccess) {
+                VRChatUser user = await vrcApi.GetUserFromIdAsync(shortUser.id);
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Sorry, already registered to " + user.displayName));
+                return;
+            }
+        
+            VRChatUser vrcUser = await vrcApi.GetUserFromIdAsync(shortUser.id);
+            Result res = await vrcUser.SendFriendRequestAsync();
+            if (res.Status == ResultStatus.NotFound) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("That user wasn't found for some reason.. ?"));
+                return;
+            } else if (res.IsSuccess) {
+                await db.InsertVrchatPairAsync(ctx.Member, vrcUser);
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Awesome, shot you a friend request"));
+            } else {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong on my end.. ?  Ping an admin or something I guess"));
+                return;
+            }
+
+            await queryMessage.DeleteAsync();
         }
-        // Register a group with the Discord server; autoinvites users once they're bound
     
         [SlashCommand("Login", "Login to VRChat with associated account")]
         [SlashRequireUserPermissions(Permissions.Administrator, true)]
@@ -113,16 +106,16 @@ namespace Cerberus.Commands {
             } catch (HttpRequestException e) {
                 _logger.Warning("Something went wrong trying to connect to vrchat: code {0}", e.StatusCode);
                 _logger.Debug(e.Message);
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
                 return;
             }
 
             if (res == LoginResponseTypes.Connected) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Got it, I'm in"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Got it, I'm in"));
                 return;
             } else if (res == LoginResponseTypes.Failed) {
                 _logger.Warning("Something went wrong trying to connect to vrchat");
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong?  I wasn't able to get through.. ?"));
                 return;
             }
 

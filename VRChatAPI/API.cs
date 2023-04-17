@@ -106,6 +106,20 @@ namespace Cerberus.VRChat {
             user.init(_http);
             return user;
         }
+        public async Task<Result<ShortUser[]>> SearchUserAsync(string displayName, int number) {
+            Stream res;
+            try {
+                res = await _http.GetStreamAsync(String.Format("{0}/users?search={1}?n={2}?apiKey={3}", Const.BASE_PATH, displayName, number, Const.API_KEY));
+            } catch (HttpRequestException e) {
+                _logger.Warning(e.Message);
+                if (e.StatusCode == HttpStatusCode.BadRequest) {
+                    return Result<ShortUser[]>.NotFound();
+                } 
+                return Result<ShortUser[]>.Error();
+            }
+
+            return await JsonSerializer.DeserializeAsync<ShortUser[]>(res);
+        }
         public async Task<Result<VRChatInstance>> GetInstanceAsync(string id, string worldId) {
             Stream res;
             try {
@@ -159,6 +173,25 @@ namespace Cerberus.VRChat {
         TwoFactorRequired,
         Failed
     }
+    public struct ShortUser {
+        string bio { get; set; }
+        public string currentAvatarImageUrl { get; set; }
+        public string currentAvatarThumbnailImageUrl { get; set; }
+        public string developerType { get; set; }
+        public string displayName { get; set; }
+        public string fallbackAvatar { get; set; }
+        public string id { get; set; }
+        public bool isFriend { get; set; }
+        public string last_platform { get; set; }
+        public string profilePicOverride { get; set; }
+        public string status { get; set; }
+        public string statusDescription { get; set; }
+        public string[] tags { get; set; }
+        public string userIcon { get; set; }
+        public string location { get; set; }
+        public string friendKey { get; set; }
+    }
+
     [System.Serializable]
     public class UserNotFoundException : System.Exception
     {
