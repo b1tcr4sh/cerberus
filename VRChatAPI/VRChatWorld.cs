@@ -2,6 +2,31 @@ using System.Net;
 
 namespace Cerberus.VRChat {
     public class VRChatWorld {
+        public string authorId { get; set; }
+        public string authorName { get; set; }
+        public int capacity { get; set; }
+        public string created_at { get; set; }
+        public string description { get; set; }
+        public int favorites { get; set; }
+        public bool featured { get; set; }
+        public int heat { get; set; }
+        public string id { get; set; }
+        public string imageUrl { get; set; }
+        public string[] instances { get; set; }
+        public string labsPublicationDate { get; set; }
+        public string name { get; set; }
+        public string Namespace { get; set; }
+        public int occupants { get; set; }
+        public string organization { get; set;}
+        public int popularity { get; set; }
+        public string previewYoutubeId { get; set; }
+        public int privateOccupants { get; set; }
+        public int publicOccupants { get; set; }
+        public string publicationDate { get; set; }
+        public string[] tags { get; set; }
+        public string thumbnailImageUrl { get; set; }
+        public string updated_at { get; set; }
+        public int visits { get; set; }
 
         private HttpClient _http;
         private bool _locked = false;
@@ -14,6 +39,16 @@ namespace Cerberus.VRChat {
             _locked = true;
             _http = http;
         }
+    }
+    public struct UnityPackage {
+        public string assetUrl { get; set; }
+        public int assetVersion { get; set; }
+        public string created_at { get; set; }
+        public string id { get; set; }
+        public string platform { get; set; }
+        public string pluginUrl { get; set; }
+        public string unitySortNumber { get; set; }
+        public string unityVersion { get; set; }
     }
 }
 

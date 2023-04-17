@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;

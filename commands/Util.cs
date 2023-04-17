@@ -1,6 +1,10 @@
+using DSharpPlus;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Interactivity;
+using DSharpPlus.EventArgs;
 using Serilog;
 
 using Cerberus.Database;
@@ -30,48 +34,62 @@ namespace Cerberus.Commands {
             await ctx.Channel.SendMessageAsync(embed);
             await ctx.DeleteResponseAsync();
         }
-        [SlashCommand("Reaction-Role", "Creates a reaction-role listener")]
-        public async Task ReactionRole(InteractionContext ctx, [Option("Role", "Name of the role to associate")] string roleName,
-            [Option("MessageID", "ID of the message to attach to")] string messageId,
-            [Option("Emoji-Name", "Name of the emoji to use")] string emojiName) {
+        [ContextMenu(DSharpPlus.ApplicationCommandType.MessageContextMenu, "Add Reaction Role")]
+        [SlashRequireUserPermissions(Permissions.Administrator, true)]
+        public async Task ReactionRole(ContextMenuContext ctx) {
 
             await ctx.DeferAsync();
 
-            DiscordRole role = ctx.Guild.Roles.Where((pair, index) => {
-                return pair.Value.Name.ToLower().Equals(roleName.ToLower()) ? true : false;
-            }).First().Value;
-
-            if (role is null) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("That role definitelyy doesn't exist"));
+            DiscordMessage idRequest = await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("I'm gonna need the ID of the role to add when a user reacts to the message.  Just send it here"));
+            InteractivityResult<DiscordMessage> roleIdRes = await ctx.Channel.GetNextMessageAsync(message => message.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(30));
+            if (roleIdRes.TimedOut) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Looks like you took too long.  Maybe don't be so slow next time."));
+                return;
+            }
+            ulong providedId;
+            bool validId = ulong.TryParse(roleIdRes.Result.Content, out providedId);
+            if (!validId) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("That's not even close to a role ID"));
                 return;
             }
 
-            ulong messageIdInt;
-            if (!ulong.TryParse(messageId, out messageIdInt)) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Something's wrong with that message id?  Don't ask me"));
+            IEnumerable<KeyValuePair<ulong, DiscordRole>> foundRoles = ctx.Guild.Roles.Where((pair, index) => (pair.Value.Id == providedId) ? true : false);
+            if (foundRoles.Count() == 0) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Couldn't fine that role.. ?"));
+                return;
+            } 
+            DiscordRole role = foundRoles.First().Value;
+            DiscordMessage messageClickedOn = ctx.TargetMessage;
+
+            DiscordMessage emojiRequest = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Now react to the message with the emoji you want to keep."));
+            InteractivityResult<MessageReactionAddEventArgs> reaction = await messageClickedOn.WaitForReactionAsync(ctx.User, TimeSpan.FromSeconds(30));
+            if (reaction.TimedOut) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Looks like you took too long.  Maybe don't be so slow next time."));
                 return;
             }
 
-            DiscordMessage message;
-            DiscordEmoji emoji = DiscordEmoji.FromName(ctx.Client, String.Format(":{0}:", emojiName));
+            DiscordEmoji emoji = reaction.Result.Emoji;
 
-            try {
-                message = await ctx.Channel.GetMessageAsync(messageIdInt);
-            } catch (NotFoundException) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Yeaa I don't think that message exists"));
-                return;
+            await messageClickedOn.CreateReactionAsync(emoji);    
+
+            if (!await Db.RegisterReactionListenerAsync(new Reactionlistener { MessageId = messageClickedOn.Id, RoleId = role.Id, Emoji = emoji })) {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Something went wrong with the Database... ?"));
             }
 
-            await message.CreateReactionAsync(emoji);    
-
-            if (!await Db.RegisterReactionListenerAsync(new Reactionlistener { MessageId = messageIdInt, RoleId = role.Id, Emoji = emoji })) {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Couldn't insert into Redis... ?"));
-            }
-
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Should have worked.. ?"));
-
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            await ctx.Member.GrantRoleAsync(role, "Reaction Role");
             await (await ctx.GetOriginalResponseAsync()).DeleteAsync();
+            await roleIdRes.Result.DeleteAsync();
+            await emojiRequest.DeleteAsync();
+            await idRequest.DeleteAsync();
+        }
+    }
+    public class AdminPermissionCheck : SlashCheckBaseAttribute {
+        public override Task<bool> ExecuteChecksAsync(InteractionContext ctx) {
+            if (ctx.Member.Permissions == DSharpPlus.Permissions.Administrator) {
+                return Task.FromResult(true);
+            } else {
+                return Task.FromResult(false);
+            }
         }
     }
 }
