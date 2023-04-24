@@ -19,7 +19,7 @@ namespace Cerberus.Commands {
     public class Vrchat : ApplicationCommandModule {
         public DatabaseMiddleware db { private get; set; }
         public VRChatAPI vrcApi { private get; set; }
-        private ILogger _logger = Log.Logger;
+        public ILogger _logger { private get; set; }
 
         [SlashCommand("Online-Players", "Gets the currently active player number from VRChat.")]
         public async Task OnlinePlayers(InteractionContext ctx) {

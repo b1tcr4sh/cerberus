@@ -15,11 +15,13 @@ namespace Cerberus.Commands {
     public class Util : ApplicationCommandModule {
         public DatabaseMiddleware Db { private get; set; }
         public VRChatAPI vrcApi { private get; set; }
-        private ILogger _logger = Log.Logger;
+        public ILogger _logger { private get; set; }
 
         [SlashCommand("Ping", "Table Tennis or something idk")]
         public async Task Ping(InteractionContext ctx) {
             await ctx.DeferAsync();
+
+            _logger.Information("Ping!");
 
             bool vrcConnected = vrcApi.Authenticated();
             bool dbConnected = Db.Connected();
