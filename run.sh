@@ -1,6 +1,4 @@
-#!/bin/ash
-# #!/bin/bash
-# #!/sbin/openrc-run
+#!/bin/sh
 
 git fetch
 git pull
